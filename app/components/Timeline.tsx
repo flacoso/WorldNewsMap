@@ -2,7 +2,7 @@
 import {useMemo,useState} from 'react';
 import type {MapNews} from './WorldMap';
 
-type News=MapNews&{time:string;title:string;country:string};
+type News=MapNews&{time:string;source:string;url:string};
 function parseTime(t:string){const d=new Date(t);return Number.isNaN(d.getTime())?0:d.getTime()}
 export default function Timeline({news,onChange}:{news:News[];onChange:(items:News[])=>void}){
  const [hours,setHours]=useState(6);
