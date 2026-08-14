@@ -1,13 +1,5 @@
 import { NextResponse } from 'next/server';
-
 export const dynamic='force-dynamic';
-
-export async function GET(){
- const url='https://api.gdeltproject.org/api/v2/doc/doc?query=(news%20OR%20world)&mode=artlist&maxrecords=50&timespan=6h&sort=datedesc&format=json';
- try{
-  const res=await fetch(url,{next:{revalidate:900}});
-  if(!res.ok) return NextResponse.json({articles:[]},{status:502});
-  const data=await res.json();
-  return NextResponse.json({articles:data.articles??[],updatedAt:new Date().toISOString()});
- }catch{return NextResponse.json({articles:[],error:'No se pudo consultar la fuente de noticias'},{status:503});}
-}
+const FALLBACK=[{id:'demo-1',title:'WorldNewsMap está listo para recibir noticias en tiempo real',country:'Mundo',category:'General',time:'Ahora',lat:20,lng:0,url:'https://www.gdeltproject.org/'}];
+function categoryOf(title:string){const t=title.toLowerCase();if(/war|conflict|attack|military|security|ukraine|israel|gaza/.test(t))return'Seguridad';if(/election|president|government|minister|politic|parliament/.test(t))return'Política';if(/market|economy|economic|bank|trade|inflation|stock/.test(t))return'Economía';if(/science|research|climate|space|health|medical/.test(t))return'Ciencia';if(/technology|software|artificial intelligence|\bai\b|chip/.test(t))return'Tecnología';if(/earthquake|flood|storm|hurricane|fire|volcano/.test(t))return'Desastres';return'General';}
+export async function GET(){const url='https://api.gdeltproject.org/api/v2/doc/doc?query=(news%20OR%20world)&mode=artlist&maxrecords=50&timespan=6h&sort=datedesc&format=json';try{const res=await fetch(url,{next:{revalidate:900}});if(!res.ok)throw new Error();const data=await res.json();const articles=(data.articles??[]).map((a:any,i:number)=>({id:`gdelt-${i}`,title:String(a.title??'Sin título'),country:String(a.domain??'Fuente internacional'),category:categoryOf(String(a.title??'')),time:String(a.seendate??''),lat:20,lng:0,url:String(a.url??'')})).filter((a:any)=>a.url);return NextResponse.json({source:'GDELT',articles:articles.length?articles:FALLBACK,updatedAt:new Date().toISOString()});}catch{return NextResponse.json({source:'fallback',articles:FALLBACK,updatedAt:new Date().toISOString()});}}
