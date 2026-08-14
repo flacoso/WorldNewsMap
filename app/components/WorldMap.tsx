@@ -10,11 +10,12 @@ export default function WorldMap({news,onSelect}:{news:MapNews[];onSelect:(id:st
  useEffect(()=>{
   if(!ref.current)return;
   const container=ref.current;
-  const map=new maplibregl.Map({container,style:'https://demotiles.maplibre.org/style.json',center:[0,20],zoom:1.35,minZoom:1,maxZoom:8,attributionControl:true});
+  const map=new maplibregl.Map({container,style:'https://demotiles.maplibre.org/style.json',center:[0,20],zoom:1.35,minZoom:1,maxZoom:8});
   mapRef.current=map; map.addControl(new maplibregl.NavigationControl(),'top-right');
   const render=()=>{
-   if(map.getSource('news')){(map.getSource('news') as maplibregl.GeoJSONSource).setData(news.length?{type:'FeatureCollection',features:news.map(n=>({type:'Feature',geometry:{type:'Point',coordinates:[Number(n.lng)||0,Number(n.lat)||0]},properties:{id:n.id,title:n.title,country:n.country,category:n.category}}))}:EMPTY);return;}
-   map.addSource('news',{type:'geojson',data:news.length?{type:'FeatureCollection',features:news.map(n=>({type:'Feature',geometry:{type:'Point',coordinates:[Number(n.lng)||0,Number(n.lat)||0]},properties:{id:n.id,title:n.title,country:n.country,category:n.category}}))}:EMPTY,cluster:true,clusterMaxZoom:5,clusterRadius:48});
+   const data=news.length?{type:'FeatureCollection' as const,features:news.map(n=>({type:'Feature' as const,geometry:{type:'Point' as const,coordinates:[Number(n.lng)||0,Number(n.lat)||0]},properties:{id:n.id,title:n.title,country:n.country,category:n.category}}))}:EMPTY;
+   if(map.getSource('news')){(map.getSource('news') as maplibregl.GeoJSONSource).setData(data);return;}
+   map.addSource('news',{type:'geojson',data,cluster:true,clusterMaxZoom:5,clusterRadius:48});
    map.addLayer({id:'clusters',type:'circle',source:'news',filter:['has','point_count'],paint:{'circle-color':['step',['get','point_count'],'#3b82f6',10,'#8b5cf6',30,'#ef4444'],'circle-radius':['step',['get','point_count'],20,10,25,30,31],'circle-stroke-width':2,'circle-stroke-color':'#fff'}});
    map.addLayer({id:'cluster-count',type:'symbol',source:'news',filter:['has','point_count'],layout:{'text-field':['get','point_count_abbreviated'],'text-size':12},paint:{'text-color':'#fff'}});
    map.addLayer({id:'news-points',type:'circle',source:'news',filter:['!',['has','point_count']],paint:{'circle-color':['match',['get','category'],'Seguridad','#ff4d5e','Política','#4da3ff','Tecnología','#4da3ff','Ciencia','#35d07f','Economía','#ffc44d','#8fa8c2'],'circle-radius':7,'circle-stroke-color':'#fff','circle-stroke-width':2}});
